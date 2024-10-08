@@ -29,7 +29,7 @@ double I = 0.0;
 const double Kp = 2.0;
 const double Ki = 0.1;
 const double Kd = 1.0;
-int mode_camera = 21; //Mode automatique = 21 - Mode manuel = 31
+int mode_camera = 21; //Mode automatique = 21 - Mode manuel = 31 |
 
 //définition des variables pour le bluetooth
 const int RX = 1;
