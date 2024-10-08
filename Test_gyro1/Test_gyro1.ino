@@ -3,7 +3,7 @@
 #include <SoftwareSerial.h>
 #include "Servo.h"
 #include <I2Cdev.h>
-
+//un vieux commentaire
 Servo servo; // création de l'objet "servo"
 const int servoPin = 6; //définition du pin du servo
 
