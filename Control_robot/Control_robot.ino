@@ -1,27 +1,36 @@
+// PIN MOTEURS
+const int PIN_M1 = 3;    // Port D3 PWM
+const int PIN_M2 = 5;    // Port D5 PWM
 
-
-int VRx = A0; // VRx to analog input 0
-int VRy = A1; // VRy to analog input 1
-int SW = 2; // SW to digital pin 2
-int xPosition = 0; // Initialize xPosition variable with 0
-int yPosition = 0; // Initialize yPosition variable with 0
-int SW_state = 0; // Initialize SW_state variable with 0
-
+const int PIN_SENS_M1 = A2; // Port A2  On peut utiliser les ports analogiques comme des digitaux
+const int PIN_SENS_M2 = A1; // Port A1
 
 void setup() {
-Serial.begin(9600); // Initialize Serial connection with a baudrate of 9600 bits/s
-pinMode(VRx, INPUT); // Set VRx pin as INPUT
-pinMode(VRy, INPUT); // Set VRy pin as INPUT
-pinMode(SW, INPUT_PULLUP); // Enable internal pullup resistor on switch pin
-}
+  // Initialisation de la connexion série à un débit de 9600 bits/s
+  Serial.begin(9600);
 
+  // Configuration des PINS comme des sorties
+  pinMode(PIN_M1, OUTPUT);
+  pinMode(PIN_M2, OUTPUT);
+  pinMode(PIN_SENS_M1, OUTPUT);
+  pinMode(PIN_SENS_M2, OUTPUT);
+
+  // Setup initial des moteurs
+  setupMotors();
+}
 
 void loop() {
-xPosition = analogRead(VRx); // Read x position of joystick
-yPosition = analogRead(VRy); // Read y position of joystick
-SW_state = digitalRead(SW); // Read switch state
-Serial.print(xPosition); // Print x position of joystick (0->1023)
-Serial.print("\t"); // Add tab character to seperate the 2 values
-Serial.println(yPosition); // Print y position of joystick (0->1023)
-delay(10);
+  // Pour l'instant, la boucle principale est vide
 }
+
+//-------------------------------------Fonction pour configurer les moteurs--------------------------
+void setupMotors() {
+  // Vitesse de rotation des moteurs nulle
+  analogWrite(PIN_M1, 0);
+  analogWrite(PIN_M2, 0);
+
+  // Sens de rotation par défaut : vers l'avant
+  digitalWrite(PIN_SENS_M1, HIGH);
+  digitalWrite(PIN_SENS_M2, HIGH);
+}
+//--------------------------------------------------------------------------------------------------
