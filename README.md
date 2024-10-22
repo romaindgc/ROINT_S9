@@ -4,12 +4,21 @@
 
 ### Joysticks 
 
+**Joystick 1**  
+
 Initially, the values are $(X,Y) = (530,500) $ 
 
 * Along X axes : values between 0 and 1023  
-* Along Y axes : values between 0 and 1023  
+* Along Y axes : values between 0 and 1023    
 
-Coordinates :  
+**Joystick 2**  
+
+Initially, the values are $(X,Y) = (?,564) $ 
+
+* Along X axes : values between 0 and 1023  
+* Along Y axes : values between 0 and 1023 
+
+**Coordinates :**   
 * **$(X,Y) = (0,500)$** : joystick is on the **right**
 * **$(X,Y) = (1023,500)$** : joystick is on the **left**  
 
@@ -51,6 +60,63 @@ For that, we use the method *map()*.
 ```
 
 All information comes from [arduino map()](https://docs.arduino.cc/language-reference/en/functions/math/map/) 
+
+### Motors and rotation direction
+Hence, with the mapped value, we can deduce the velocity and the rotation direction for one motor.  
+For controling one motor, we use only the vertical direction of the joystick *ie* the $Y$ axes.  
+So we have : 
+
+$$
+Rotationdirection = \begin{cases} 
+   Counter clockwise & \text{if } Y < 500 \\
+   Clockwise & \text{if } Y > 500 
+\end{cases}
+$$
+
+```cpp
+void rotationDirection(int y, int Y_joy, int PIN_SENS){
+  if (y < Y_joy ){
+    digitalWrite(PIN_SENS, LOW); //Counter clockwise rotation direction
+  }else{
+    digitalWrite(PIN_SENS, HIGH); //Clockwise rotation direction
+  }
+}
+```
+* `y` : is the current position along the y axes of the joystick 
+* `Y_joy` : is the inital value of Y of the joystick  
+* `PIN_SENS` : is the PIN value of the PIN to manage the rotation direction of one moteur  
+
+### Deadzone
+
+The joystick is not perfect. Hence, it never returns fully to the original postion *ie* when you release the joystick, it will not go evrytime at $(X,Y) = (530,500) $.  
+Therefore, a wheel could continue to rotate even if is not desired.  
+To avoid that, we create a **deadzone** : if the value of $Y$ is within the interval $[\alpha, \beta]$, the return value is 0. It is called a **treshold function**.  
+
+```cpp
+int thresholdFunction(int x, int lowerBound, int upperBound) {
+  if (x > lowerBound) {
+    return 0;  // If x is greater than the lowerBound return 0
+  } else if (x < upperBound) {
+    return 0;  // If x is lower than the upperbound return 0
+  } else {
+    return 1;  // Else return 1
+  }
+}
+```
+We have to adjust the boundaries of the deadzone for each joystick because they do not have the same initial position. 
+For example is that case, we choose a deadzone of 10%  of the full range for each joystick :  
+```cpp
+//Initial value of Y for each joysticks
+const int Y_joy1 = 500;
+const int Y_joy2 = 564;
+
+//Boundaries for the treshold function
+const int upperBound_joy1 = Y_joy1 + ceil(1023*0.01);
+const int lowerBound_joy1 = Y_joy1 - ceil(1023*0.01);
+
+const int upperBound_joy2 = Y_joy2 + ceil(1023*0.01);
+const int lowerBound_joy2 = Y_joy2 - ceil(1023*0.01);
+```
 
 ## Function *millis()*
 
