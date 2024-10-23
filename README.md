@@ -84,13 +84,13 @@ void rotationDirection(int y, int Y_joy, int PIN_SENS){
 ```
 * `y` : is the current position along the y axes of the joystick 
 * `Y_joy` : is the inital value of Y of the joystick  
-* `PIN_SENS` : is the PIN value of the PIN to manage the rotation direction of one moteur  
+* `PIN_SENS` : is the PIN used to control the rotation direction of a motor  
 
 ### Deadzone
 
-The joystick is not perfect. Hence, it never returns fully to the original postion *ie* when you release the joystick, it will not go evrytime at $(X,Y) = (530,500) $.  
-Therefore, a wheel could continue to rotate even if is not desired.  
-To avoid that, we create a **deadzone** : if the value of $Y$ is within the interval $[\alpha, \beta]$, the return value is 0. It is called a **treshold function**.  
+The joystick is not perfect. Hence, it never fully returns to its original position. i.e., when you release the joystick, it will not always return to $(X,Y) = (530,500)$.
+As a result, a wheel could continue to rotate even if it is not desired.
+To avoid this, we create a deadzone: if the value of $Y$ is within the interval $[\alpha, \beta]$, the return value is set to 0. This is known as a **threshold function**. 
 
 ```cpp
 int thresholdFunction(int x, int lowerBound, int upperBound) {
@@ -110,7 +110,7 @@ For example is that case, we choose a deadzone of 10%  of the full range for eac
 const int Y_joy1 = 500;
 const int Y_joy2 = 564;
 
-//Boundaries for the treshold function
+//Boundaries for the threshold function
 const int upperBound_joy1 = Y_joy1 + ceil(1023*0.01);
 const int lowerBound_joy1 = Y_joy1 - ceil(1023*0.01);
 
