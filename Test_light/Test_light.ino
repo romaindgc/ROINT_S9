@@ -12,9 +12,9 @@ const int frequence_clignotement = 7; //En ms
 
 
 //Définition des variables pour le bluetooth
-//const int RX = 1;
-//const int TX = 0;
-//SoftwareSerial bluetoothSerial(RX, TX); // RX, TX
+const int RX = 1;
+const int TX = 0;
+SoftwareSerial bluetoothSerial(RX, TX); // RX, TX
 
 
 void setup() {
@@ -24,10 +24,10 @@ void setup() {
   pinMode (PIN_ENABLE_LEDS, OUTPUT); //définition du PIN ENABLE LED comme une sortie
   analogWrite(PIN_ENABLE_LEDS, 0); //on éteind l'éclairage par défaut
 
- // // define pin modes for tx, rx pins:
- // pinMode(RX, INPUT);
- // pinMode(TX, OUTPUT);
- // bluetoothSerial.begin(38400);
+ // define pin modes for tx, rx pins:
+  pinMode(RX, INPUT);
+  pinMode(TX, OUTPUT);
+  bluetoothSerial.begin(38400);
 }
 
 void loop() {
@@ -35,10 +35,10 @@ void loop() {
   //readTension();
   //CHOIX_MODE = (int)bluetoothSerial.read(); //Lecture de la commande bluetooth
 
-  String data = Serial.readStringUntil('\n'); // Lire jusqu'à la fin de ligne
+  String data = bluetoothSerial.readStringUntil('\n'); // Lire jusqu'à la fin de ligne
   int CHOIX_MODE = data.toInt(); // Convertir en entier
-  Serial.println("Choix reçu : ");
-  Serial.println(CHOIX_MODE); // Afficher le nombre reçu
+  bluetoothSerial.println("Choix reçu : ");
+  bluetoothSerial.println(CHOIX_MODE); // Afficher le nombre reçu
 
   if (CHOIX_MODE != 10 && CHOIX_MODE != 20 && CHOIX_MODE != 30 ){
       Serial.println("Choix precedent ");
