@@ -152,3 +152,23 @@ The *delay* function is stopping all the program during a choosen value :
 This function is not suitable for our case because we do not want to stop the process because in the mean time, the code is used for controling the robot, the lights and the camera.    
 
 For more information check on the website [arduino.cc/millis](https://docs.arduino.cc/language-reference/en/functions/time/millis/)  
+
+
+## Settup of the camera and its module
+
+### Connection and first step
+
+In order to supply power to the camera module, it must be powered up to at least 12V and 300mA, which give us a power of 3W (higher than the recommanded value).
+
+When supplied, the module displays different number, follow the next indication : 
+
+
+* **Press and hold** the button to enter the parameter settings.
+* **Press and hold** the button, the digital display will show the alphabet for the band **(A-b-C-d-E)**, **press the button** to select the bands.
+* **Press and hold** the button again. When the digital display shows the Arabic numerals for the channel (1-8), **press** the button to select the channels.
+* Finally, **press and hold** down the button, VTX returns to its normal operating state and the band, channel and frequency will in turn be displayed on the digital display.
+
+Fix the band and channel in function of this table to allow the screen to be at the same frequency as the module : 
+ ![Texte alternatif](image/tab_channel.png "Table of available channel")
+
+
