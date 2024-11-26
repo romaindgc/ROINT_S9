@@ -5,10 +5,10 @@
 #include <I2Cdev.h>
 
 //Définition des variables pour le système d'éclairage
-const int PIN_ENABLE_LEDS = 3; //PIN pour la commande de l'éclairage
-int CHOIX_MODE = 0000; // 1000 = éclairage --  2000 = defense
-int CHOIX_MODE_PREVIOUS = 0000;
-const int frequence_clignotement = 50; //En ms
+const int PIN_ENABLE_LEDS = A3; //PIN pour la commande de l'éclairage
+int CHOIX_MODE = 10; // 1000 = éclairage --  2000 = defense
+int CHOIX_MODE_PREVIOUS = 10;
+const int frequence_clignotement = 7; //En ms
 
 
 //Définition des variables pour le bluetooth
@@ -34,9 +34,20 @@ void loop() {
   //readMPU();
   //readTension();
   //CHOIX_MODE = (int)bluetoothSerial.read(); //Lecture de la commande bluetooth
-  CHOIX_MODE = (int)Serial.read();
-  Serial.println("Red value : ");
-  Serial.println(CHOIX_MODE);
+
+  String data = Serial.readStringUntil('\n'); // Lire jusqu'à la fin de ligne
+  int CHOIX_MODE = data.toInt(); // Convertir en entier
+  Serial.println("Choix reçu : ");
+  Serial.println(CHOIX_MODE); // Afficher le nombre reçu
+
+  if (CHOIX_MODE != 10 && CHOIX_MODE != 20 && CHOIX_MODE != 30 ){
+      Serial.println("Choix precedent ");
+      CHOIX_MODE = CHOIX_MODE_PREVIOUS;
+  }else{
+    Serial.println("New choice ");
+    CHOIX_MODE_PREVIOUS = CHOIX_MODE;
+  }
+
   //testservo();
   choixModeEclairage(CHOIX_MODE);
 }
@@ -47,15 +58,15 @@ void loop() {
 //-----------------------------------------------------------------------------------------------------------------
   void choixModeEclairage(int choix){
     switch (choix) {
-    case 0000:
+    case 10:
         eclairageEteint();
         break;
 
-    case 1000:
+    case 20:
         eclairageAllume();
         break;
 
-    case 2000:
+    case 30:
         eclairageDefense();
         break;
 
