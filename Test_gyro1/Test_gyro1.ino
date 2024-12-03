@@ -5,7 +5,7 @@
 #include <I2Cdev.h>
 
 Servo servo; // création de l'objet "servo"
-const int servoPin = 6; //définition du pin du servo
+const int servoPin = 5; //définition du pin du servo
 
 
 //Définition variable pour la lecture angle y
@@ -17,24 +17,11 @@ double x;
 double y;
 double z;
 
-//Définition des variables pour le système d'éclairage
-const int PIN_ENABLE_LEDS = 3; //PIN pour la commande de l'éclairage
-int CHOIX_MODE = 0000; // 1000 = éclairage --  2000 = defense
-const int frequence_clignotement = 50; //En ms
-
-//Définition variable pour asservissement et correcteur PID
-const double Consigne = 0.0; //consigne à atteindre
-double prevError = 0.0;
-double I = 0.0;
-const double Kp = 2.0;
-const double Ki = 0.1;
-const double Kd = 1.0;
-int mode_camera = 21; //Mode automatique = 21 - Mode manuel = 31 |
 
 //Définition des variables pour le bluetooth
-const int RX = 1;
-const int TX = 0;
-SoftwareSerial bluetoothSerial(RX, TX); // RX, TX
+//const int RX = 1;
+//const int TX = 0;
+//SoftwareSerial bluetoothSerial(RX, TX); // RX, TX
 
 //Définition des périodes et variables de temps
 unsigned long currentMillis = millis();   // Temps actuel
@@ -43,16 +30,19 @@ const unsigned long periodGyro = 500;
 const unsigned long periodTension = 5000;
 
 void setup() {
+  //Setup gyroscope
   Wire.begin();
   Wire.beginTransmission(MPU_addr);
   Wire.write(0x6B);
   Wire.write(0);
   Wire.endTransmission(true);
-  Serial.begin(9600);
 
   //Définition servo
   servo.attach(servoPin); // attache le servo au pin spécifié
   servo.write(Consigne); //définir la position initiale du servo
+
+  Serial.begin(9600);
+
 
   //Définition 
   pinMode (PIN_ENABLE_LEDS, OUTPUT); //définition du PIN ENABLE LED comme une sortie
@@ -167,132 +157,6 @@ double lire_angle_gyro( ) {
     return y;
   }
   return -1;
-}
-//-----------------------------------------------------------------------------------------------------------------
-//-----------------------------------------------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------------------------------------------
-//                                    Fonction : Lire la tension pour la sécu. batterie
-//-----------------------------------------------------------------------------------------------------------------
-void readTension( ) {
-  static unsigned long previousMillis = 0;
-  if(currentMillis - previousMillis >= periodTension) {
-    //digitalWrite(4, HIGH); // Définit la broche 4 en état HIGH
-    //delay(100);
-    //digitalWrite(4, LOW); // Définit la broche 4 en état LOW
-    float sommeTension = 0.0; //définition pour faire la moyenne de la tension
-    int echantillon=1000; //A MODIFIER, valeur du nombre d'echantillon qui définie la précision de notre mesure
-    for (int i = 0; i < echantillon; i++) { //on récupère toutes les valeurs selon le nombre d'échantillon désiré
-      int valeurTension = analogRead(A0);
-      float tension = (float)valeurTension * 5.0 / 1023.0; //on mutlplie par 5/1023 pour obtenir la valeur en tension, l'arduino étant codé sur 1024 bits
-      sommeTension += tension; 
-      
-      delay(100/echantillon); // Attendre un peu entre chaque lecture en fonction du nombre d'échantillon (10 secondes)
-    }
-  
-    // Calculer la moyenne des échantillons
-    float moyenneTension = sommeTension / echantillon;
-  
-    // Envoi de la moyenne via Bluetooth
-    Serial.println("Moyenne tension (");
-    Serial.print(echantillon);
-    Serial.print(" echantillons): ");
-    Serial.print(moyenneTension, 2); // Affiche la moyenne avec 2 décimales
-    Serial.println(" V");
-    }
-
-}
-//-----------------------------------------------------------------------------------------------------------------
-//-----------------------------------------------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------------------------------------------
-//                                    Fonction : CHOIX MODE CAMERA
-//-----------------------------------------------------------------------------------------------------------------
-  void choixModeCamera(int choix){
-    switch (choix) {
-    case 21:
-        ModeAutoCamera();
-        break;
-
-    case 31:
-        //TODO : Mode manuel
-        break;
-
-    default:
-        //Mode auto par défaut
-        break;
-}
-
-  }
-//-----------------------------------------------------------------------------------------------------------------
-//-----------------------------------------------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------------------------------------------
-//                                    Fonction : Mode automatique camera
-//-----------------------------------------------------------------------------------------------------------------
-  void ModeAutoCamera(){
-    double angle_y=lire_angle_gyro(); //définir l'angle y comme la lecture de l'angle avec le gyro
-    asservissement_servo(angle_y);
-  }
-//-----------------------------------------------------------------------------------------------------------------
-//-----------------------------------------------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------------------------------------------
-//                                    Fonction : CHOIX MODE ECLAIRAGE
-//-----------------------------------------------------------------------------------------------------------------
-  void choixModeEclairage(int choix){
-    switch (choix) {
-    case 0000:
-        eclairageEteint();
-        break;
-
-    case 1000:
-        eclairageAllume();
-        break;
-
-    case 2000:
-        eclairageDefense();
-        break;
-
-    default:
-        eclairageEteint();
-        break;
-}
-
-  }
-//-----------------------------------------------------------------------------------------------------------------
-//-----------------------------------------------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------------------------------------------
-//                                    Fonction : Système d'éclairage -- MODE ETEINT -- 0000
-//-----------------------------------------------------------------------------------------------------------------
-  void eclairageEteint(){
-    analogWrite(PIN_ENABLE_LEDS,0); //On éteind les LEDs
-    Serial.println("LEDs eteintes");
-  }
-//-----------------------------------------------------------------------------------------------------------------
-//-----------------------------------------------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------------------------------------------
-//                                    Fonction : Système d'éclairage -- MODE ECLAIRAGE -- 1000
-//-----------------------------------------------------------------------------------------------------------------
- void eclairageAllume(){
-    analogWrite(PIN_ENABLE_LEDS,1023); //Allumage des LEDs
-    Serial.println("LEDs allumees");
- }
-//-----------------------------------------------------------------------------------------------------------------
-//-----------------------------------------------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------------------------------------------
-//                                    Fonction : Système d'éclairage -- MODE DEFENSE -- 2000
-//-----------------------------------------------------------------------------------------------------------------
-void eclairageDefense(){
-  Serial.println("Mode defense active");
-  analogWrite(PIN_ENABLE_LEDS,1023); //Allumage des LEDs
-  delay(frequence_clignotement);
-  analogWrite(PIN_ENABLE_LEDS,0); //LEDs éteintes
-  delay(frequence_clignotement);
 }
 //-----------------------------------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------------------------------------------
