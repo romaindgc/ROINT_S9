@@ -172,3 +172,48 @@ Fix the band and channel in function of this table to allow the screen to be at 
  ![Texte alternatif](image/tab_channel.png "Table of available channel")
 
 
+## Code integration in ATMega 328p from Arduino UNO board
+
+### Preamble 
+
+To ensure that the correct version of Arduino IDE is installed, check-up if you're using the *1.8.19*.
+First, be sure to test your code on Arduino UNO before testing it with ATMega 328p.
+
+### Setting up the library
+
+The library that provides access to programming directly on ATMega 328 is not necessarily directly installed on the Arduino IDE.
+
+To check, go to **Arduino IDE** > **Tools** > **Board Type**. If *MiniCore* does not appear in the possible choices, it is not installed. Here's how to install it : 
+
+* Open the **File** > **Preferences** menu item.
+* Enter the following URL in **Additional Boards Manager URLs**:
+```bash
+https://mcudude.github.io/MiniCore/package_MCUdude_MiniCore_index.json
+```
+* Open the **Tools** > **Board** > **Boards Manager...** menu item.
+* Search for **MiniCore**, click on it and **install**.
+* After installation is complete, close the **Boards Manager** window. 
+
+### Code integration
+
+First, you need to define your Arduino board as an ISP programmer:
+
+* Open the **File** > **Examples** > **11.ArduinoISP** > **ArduinoISP**.
+* **Upload** it. Be sure to select the correct PORT and **AVRISP mkll** programmer.
+* Your Arduino UNO is ready for use !
+
+The ICSP cable must now be wired, and we need to define the various features of our ATMega 328P in the IDE: 
+
+* Go to **Tools** > **Board Type** > **MiniCore** > **ATMega328**
+* Open **Tools** again and select **Clock** > **Internal 8 MHz**
+* BOD > **BOD Disabled**
+* EEPROM > **EEPROM retained**
+* Compiler LTO > **LTO disabled**
+* Variant > **328P/328PA**
+* Bootloader > **No Bootloader**
+* PORT > **COM** ***X*** **(Arduino UNO)**
+* Programmer > **Arduino as ISP (Minicore)**
+
+Before sending any code, you have to burn the initialization sequence by selecting **Tools** > **Burn bootloader**.
+
+You can now upload your code on your ATMega328P.
