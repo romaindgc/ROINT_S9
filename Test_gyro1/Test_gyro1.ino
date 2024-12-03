@@ -24,10 +24,8 @@ double z;
 //SoftwareSerial bluetoothSerial(RX, TX); // RX, TX
 
 //Définition des périodes et variables de temps
-unsigned long currentMillis = millis();   // Temps actuel
-const unsigned long periodServo = 500;         // Intervalle de 500 ms
+unsigned long currentMillis = millis();   // Temps actuel    
 const unsigned long periodGyro = 500;
-const unsigned long periodTension = 5000;
 
 void setup() {
   //Setup gyroscope
@@ -43,21 +41,14 @@ void setup() {
 
   Serial.begin(9600);
 
-
-  //Définition 
-  pinMode (PIN_ENABLE_LEDS, OUTPUT); //définition du PIN ENABLE LED comme une sortie
-  analogWrite(PIN_ENABLE_LEDS, 0); //on éteind l'éclairage par défaut
-
   // define pin modes for tx, rx pins:
-  pinMode(RX, INPUT);
-  pinMode(TX, OUTPUT);
-  bluetoothSerial.begin(38400);
+  //pinMode(RX, INPUT);
+  //pinMode(TX, OUTPUT);
+  //bluetoothSerial.begin(38400);
 }
 
 void loop() {
-  //readMPU();
-  //readTension();
-  CHOIX_MODE = (int)bluetoothSerial.read(); //Lecture de la commande bluetooth
+
   //testservo();
   choixModeEclairage(CHOIX_MODE);
   choixModeCamera(mode_camera);
