@@ -6,8 +6,8 @@
 
 
 //Définition des variables pour le bluetooth
-const int RX = 2;
-const int TX = 3;
+const int RX = 11;
+const int TX = 10;
 SoftwareSerial bluetoothSerial(RX, TX); // RX, TX
 
 
@@ -17,7 +17,7 @@ void setup() {
  // define pin modes for tx, rx pins:
   pinMode(RX, INPUT);
   pinMode(TX, OUTPUT);
-  bluetoothSerial.begin(38400);
+  bluetoothSerial.begin(9600);
 }
 
 void loop() {
@@ -30,7 +30,7 @@ void loop() {
     // Lire la chaîne jusqu'au caractère '!'
     String data = bluetoothSerial.readStringUntil('\n');
 
-    Serial.print("data reçue : ");
+    Serial.println("data reçue : ");
     Serial.println(data);
 
     // Vérifier que la chaîne contient au moins 2 lettres suivies d'une valeur
