@@ -25,17 +25,18 @@ double DeadZoneGyro = 3; //on laisse une marge de 3 degré pour que le servo bou
 //Variable asserv
 double prevError = 0.0;
 double I = 0;
-const double Kp = 1;
-const double Ki = 1;
-const double Kd = 0.5;
+const double Kp = 0.05;
+const double Ki = 0.10;
+const double Kd = 0.1;
+double DeadZoneAsserv = 5;
 //Définition des variables pour le bluetooth
 //const int RX = 1;
 //const int TX = 0;
 //SoftwareSerial bluetoothSerial(RX, TX); // RX, TX
 
 //Définition des périodes et variables de temps
-const unsigned long periodGyro = 50;
-const unsigned long periodServo = 100;
+const unsigned long periodGyro = 10;
+const unsigned long periodServo = 10;
 
 void setup() {
   //Setup gyroscope
@@ -74,24 +75,35 @@ void asservissement_servo(double angleY){
   static unsigned long previousMillisAsserv = 0;
   if(currentMillisAsserv - previousMillisAsserv >= periodServo) {
     previousMillisAsserv = currentMillisAsserv; 
-         // Calcul de l'erreur
+    Serial.print("AngleY=");
+    Serial.println(angleY);
+    Serial.print("Angleconsigne=");
+    Serial.println(angleConsigne);
     double error = angleConsigne - angleY;
     Serial.print("Error = ");
     Serial.println(error);
-    // Calcul des termes PID
-    double P = Kp * error;
-    I += Ki * error;
-    double D = Kd * (error - prevError)/periodServo;
-  
-    // Calcul de la commande du servomoteur
-    double servoCommand = P + I + D;
-    servoCommand = map(servoCommand, -150, 150, 150, 30);
-    Serial.print("servoCommand = ");
-    Serial.println(servoCommand);
-    servo.write(servoCommand);
-  
-    // Mise à jour de l'erreur précédente
-    prevError = error;
+    if(abs(error) > DeadZoneAsserv) { 
+      // Calcul des termes PID
+      double P = Kp * error;
+      I += Ki * error;
+      double D = Kd * (error - prevError)/periodServo;
+      I = constrain(I, -90, 90); //il ne faut pas que I augmente trop -> "windup"
+      // Calcul de la commande du servomoteur
+      Serial.print("I = ");
+      Serial.println(I);
+      double servoCommand = P + I + D;
+      Serial.print("servoCommand = ");
+      Serial.println(servoCommand);
+      servoCommand = map(servoCommand, -90, 90, 0, 180);
+      double servoCommandConsigne = servoCommand;
+      servoCommandConsigne = constrain(servoCommand, 0, 180);
+      Serial.print("servoCommandConsigne = ");
+      Serial.println(servoCommandConsigne);
+      servo.write(180-servoCommandConsigne);
+    
+      // Mise à jour de l'erreur précédente
+      prevError = error;
+     }
   }
 }
 //-----------------------------------------------------------------------------------------------------------------
@@ -120,8 +132,8 @@ void lire_angle() {
   if(currentMillisGyro - previousMillisGyro >= periodGyro) {
     previousMillisGyro = currentMillisGyro; 
     if(abs(angleConsigne - lire_angle_gyro()) > DeadZoneGyro) {  
-    angleMesure = lire_angle_gyro();
-    previousAngle = angleMesure;
+      angleMesure = lire_angle_gyro();
+      previousAngle = angleMesure;
     }
   }
   else {
