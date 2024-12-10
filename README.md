@@ -1,5 +1,10 @@
 # Projet ROINT
 
+# Table of contents
+
+* [Joysticks and motors](#joysticks-and-motors)  
+* [Sets up the camera and its module](#settup-of-the-camera-and-its-module)
+
 ## Joysticks and motors
 
 ### Joysticks 
@@ -193,6 +198,10 @@ https://mcudude.github.io/MiniCore/package_MCUdude_MiniCore_index.json
 * Open the **Tools** > **Board** > **Boards Manager...** menu item.
 * Search for **MiniCore**, click on it and **install**.
 * After installation is complete, close the **Boards Manager** window. 
+
+References :  
+* [Minicore] (https://github.com/MCUdude/MiniCore?tab=readme-ov-file#how-to-install)     
+* [ArduinoISP] (https://docs.arduino.cc/built-in-examples/arduino-isp/ArduinoISP/?queryID=undefined)  
 
 ### Code integration
 

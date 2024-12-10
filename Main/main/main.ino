@@ -51,8 +51,8 @@ const int lowerBound_joy2 = Y_joy2 - ceil(1023*0.01);
 
 
 //Définition des variables pour le bluetooth
-const int RX = 11;
-const int TX = 10;
+const int RX = 0;
+const int TX = 1;
 SoftwareSerial bluetoothSerial(RX, TX); // RX, TX
 
 
@@ -83,13 +83,13 @@ void setup() {
 void loop() {
   // Lecture et traitement de la data reçue par Bluetooth
   if (bluetoothSerial.available()) {
-    Serial.println("Available");
+    bluetoothSerial.println("Available");
 
     // Lire la chaîne jusqu'au caractère '!'
     data = bluetoothSerial.readStringUntil('!');
 
-    Serial.println("data reçue : ");
-    Serial.println(data);
+    bluetoothSerial.println("data reçue : ");
+    bluetoothSerial.println(data);
 
     // Vérifier que la chaîne contient au moins un préfixe et une valeur
     if (data.length() >= 3) {
@@ -107,7 +107,7 @@ void loop() {
       if (isInteger(string_prefix)) {
           prefix = string_prefix.toInt();
       } else {
-          Serial.println("Erreur : le préfixe n'est pas un entier !");
+          bluetoothSerial.println("Erreur : le préfixe n'est pas un entier !");
           prefix = -1;  // Valeur par défaut ou autre action
         }
 
@@ -121,16 +121,13 @@ void loop() {
       }
 
       // Afficher les résultats pour débogage
-      Serial.print("Préfixe reçu : ");
-      Serial.println(prefix);
-      Serial.print("Valeur 1 : ");
-      Serial.println(values[0]);
-      Serial.print("Valeur 2 : ");
-      Serial.println(values[1]);
+      bluetoothSerial.print("Préfixe reçu : ");
+      bluetoothSerial.println(prefix);
+      bluetoothSerial.print("Valeur 1 : ");
+      bluetoothSerial.println(values[0]);
+      bluetoothSerial.print("Valeur 2 : ");
+      bluetoothSerial.println(values[1]);
 
-    // Appeler une fonction de traitement avec le préfixe et le tableau des valeurs
-    Serial.println("Choix");
-    Serial.println(prefix == 31 ? "true" : "false");
     choixCible(prefix, values);
     }
   }
@@ -154,6 +151,12 @@ void choixCible(int prefix, int value[]){
     // Rotation des moteurs 
     int value_M1 = value[0] * thresholdFunction(value[0], lowerBound_joy1, upperBound_joy1);
     int value_M2 = value[1] * thresholdFunction(value[1], lowerBound_joy2, upperBound_joy2);
+
+    bluetoothSerial.println("Valeur mot1");
+    bluetoothSerial.println(value_M1);
+
+    bluetoothSerial.println("Valeur mot2");
+    bluetoothSerial.println(value_M2);
 
     // Mapping des valeurs d'entrée des joysticks pour les moteurs
     commandMotors(map(value_M1, 0, 1023, 0, 255), map(value_M2, 0, 1023, 0, 255));
