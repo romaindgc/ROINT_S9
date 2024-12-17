@@ -6,20 +6,22 @@
 #include <string.h>
 
 //Variables pour data process
-String data;
+String data;  // Utilisation de la variable globale 'data' uniquement
 String string_prefix;
 String valueString;
 int values[2] = {0, 0}; 
 int prefix;
 
-
+//Définition des variables pour le bluetooth
+const int RX = 0;
+const int TX = 1;
+SoftwareSerial bluetoothSerial(RX, TX); // RX, TX
 
 //Définition des variables pour le système d'éclairage
 const int PIN_ENABLE_LEDS = A3; //PIN pour la commande de l'éclairage
-const int frequence_clignotement = 7; //En ms
+const int frequence_clignotement = 26; //En ms
 bool defense_state = false;
 int ledState = 0; // État actuel de la LED (allumée ou éteinte)
-
 
 //Definition MOTEURS
 // PIN MOTEURS
@@ -47,28 +49,17 @@ const int lowerBound_joy1 = Y_joy1 - ceil(1023*0.01);
 const int upperBound_joy2 = Y_joy2 + ceil(1023*0.01);
 const int lowerBound_joy2 = Y_joy2 - ceil(1023*0.01);
 
-
-
-
-//Définition des variables pour le bluetooth
-const int RX = 0;
-const int TX = 1;
-SoftwareSerial bluetoothSerial(RX, TX); // RX, TX
-
-
 void setup() {
-  Serial.begin(9600);
-
-  //Définition 
+  //Serial.begin(9600);
+  
+  //Définition des pins
   pinMode (PIN_ENABLE_LEDS, OUTPUT); //définition du PIN ENABLE LED comme une sortie
-  analogWrite(PIN_ENABLE_LEDS, 0); //on éteind l'éclairage par défaut
+  analogWrite(PIN_ENABLE_LEDS, 0); //on éteint l'éclairage par défaut
 
- // define pin modes for tx, rx pins:
   pinMode(RX, INPUT);
   pinMode(TX, OUTPUT);
   bluetoothSerial.begin(9600);
 
-  // Configuration des PINS des moteurs comme des sorties
   pinMode(PIN_M1, OUTPUT);
   pinMode(PIN_M2, OUTPUT);
   pinMode(PIN_SENS_M1, OUTPUT);
@@ -81,12 +72,25 @@ void setup() {
 }
 
 void loop() {
+  
   // Lecture et traitement de la data reçue par Bluetooth
   if (bluetoothSerial.available()) {
-    bluetoothSerial.println("Available");
-
-    // Lire la chaîne jusqu'au caractère '!'
+    
+    // Lecture des données jusqu'au caractère '!'
     data = bluetoothSerial.readStringUntil('!');
+    data.trim();  // Nettoie la chaîne reçue
+
+    // Affiche la chaîne reçue pour débogage
+    Serial.println("Donnée reçue : " + data);
+    
+    // Affiche chaque caractère pour analyser les problèmes
+    for (int i = 0; i < data.length(); i++) {
+      char c = data[i];
+      Serial.print("Caractère : ");
+      Serial.println(c);
+      Serial.print("Code ASCII : ");
+      Serial.println((int)c);
+    }
 
     bluetoothSerial.println("data reçue : ");
     bluetoothSerial.println(data);
@@ -104,12 +108,13 @@ void loop() {
         prefix = string_prefix.toInt();
       }
       
+      // Si string_prefix est bien un entier
       if (isInteger(string_prefix)) {
-          prefix = string_prefix.toInt();
+        prefix = string_prefix.toInt();
       } else {
-          bluetoothSerial.println("Erreur : le préfixe n'est pas un entier !");
-          prefix = -1;  // Valeur par défaut ou autre action
-        }
+        bluetoothSerial.println("Erreur : le préfixe n'est pas un entier !");
+        prefix = -1;  // Valeur par défaut ou autre action
+      }
 
       // Extraire la première valeur (entre le premier et le second point, ou après le premier point s'il n'y a qu'une valeur)
       if (firstDotIndex != -1 && secondDotIndex == -1) {
@@ -128,8 +133,16 @@ void loop() {
       bluetoothSerial.print("Valeur 2 : ");
       bluetoothSerial.println(values[1]);
 
-    choixCible(prefix, values);
+      // Appel de la fonction de traitement des valeurs selon le préfixe
+      choixCible(prefix, values);
+
+      // Vérifiez et réinitialisez après traitement
+      if (data.length() > 0) {
+        data = "";  // Nettoie après chaque traitement
+        bluetoothSerial.flush();  // Vide le buffer avant de lire de nouvelles données
+      }
     }
+    delay(100);
   }
 
   //DEFENSE MODE 
@@ -138,8 +151,8 @@ void loop() {
     Serial.print("Defense actif");
     eclairageDefense();
   }
-
 }
+
  
 
 //-----------------------------------------------------------------------------------------------------------------
@@ -148,18 +161,18 @@ void loop() {
 void choixCible(int prefix, int value[]){
 
   if (prefix == 11) { 
+
+ 
+
     // Rotation des moteurs 
-    int value_M1 = value[0] * thresholdFunction(value[0], lowerBound_joy1, upperBound_joy1);
-    int value_M2 = value[1] * thresholdFunction(value[1], lowerBound_joy2, upperBound_joy2);
+    int value_M1 = value[0]; //* thresholdFunction(value[0], lowerBound_joy1, upperBound_joy1);
+    int value_M2 = value[1]; //* thresholdFunction(value[1], lowerBound_joy2, upperBound_joy2);
 
-    bluetoothSerial.println("Valeur mot1");
-    bluetoothSerial.println(value_M1);
-
-    bluetoothSerial.println("Valeur mot2");
-    bluetoothSerial.println(value_M2);
-
+  
     // Mapping des valeurs d'entrée des joysticks pour les moteurs
     commandMotors(map(value_M1, 0, 1023, 0, 255), map(value_M2, 0, 1023, 0, 255));
+
+
   } else if (prefix == 31) {
     Serial.println("Lampe switch");
     // Changement d'état de la lampe (soit ON soit OFF)
@@ -249,9 +262,9 @@ void setupMotors() {
 //                                    Fonction : Threshold function
 //-----------------------------------------------------------------------------------------------------------------
   int thresholdFunction(int x, int lowerBound, int upperBound) {
-  if (x > lowerBound) {
+  if (x < lowerBound) {
     return 0;  // If x is greater than the lowerBound return 0
-  } else if (x < upperBound) {
+  } else if (x > upperBound) {
     return 0;  // If x is lower than the upperbound return 0
   } else {
     return 1;  // Else return 1
@@ -264,8 +277,10 @@ void setupMotors() {
 //-----------------------------------------------------------------------------------------------------------------
   void rotationDirection(int y, int Y_joy, int PIN_SENS){
   if (y < Y_joy ){
+    bluetoothSerial.println("On recule");
     digitalWrite(PIN_SENS, LOW); //Counter clockwise rotation direction
   }else{
+    bluetoothSerial.println("On avance");
     digitalWrite(PIN_SENS, HIGH); //Clockwise rotation direction
   }
 }
@@ -276,6 +291,20 @@ void setupMotors() {
 //-----------------------------------------------------------------------------------------------------------------
   void commandMotors(int value_mapped_M1, int value_mapped_M2) {
   // Vitesse de rotation des moteurs nulle
+  
+  bluetoothSerial.println("Valeur mot1 mapped");
+  bluetoothSerial.println(value_mapped_M1);
+
+  bluetoothSerial.println("Valeur mot2 mapped");
+  bluetoothSerial.println(value_mapped_M2);
+
+  bluetoothSerial.println("PINM1 ");
+  bluetoothSerial.println(PIN_M1);
+
+  bluetoothSerial.println("PINM2 ");
+  bluetoothSerial.println(PIN_M2);
+
+
   analogWrite(PIN_M1, value_mapped_M1);
   analogWrite(PIN_M2, value_mapped_M2);
 

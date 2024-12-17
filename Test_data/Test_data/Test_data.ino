@@ -28,7 +28,7 @@ void loop() {
     Serial.println("Available");
     
     // Lire la chaîne jusqu'au caractère '!'
-    String data = bluetoothSerial.readStringUntil('\n');
+    String data = bluetoothSerial.readStringUntil('!');
 
     Serial.println("data reçue : ");
     Serial.println(data);
