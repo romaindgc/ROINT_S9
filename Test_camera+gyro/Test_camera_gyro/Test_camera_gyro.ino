@@ -30,7 +30,7 @@ const double Kd = 0.1;
 double DeadZoneAsserv = 5;
 const unsigned long periodServo = 10;
 //CAMERA: Mode manuel définition des variables
-const unsigned long periodCamera = 1000; 
+const unsigned long periodCamera = 300; 
 
 //Définition des variables pour le bluetooth
 //const int RX = 1;
