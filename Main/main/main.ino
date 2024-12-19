@@ -9,13 +9,13 @@
 String data;  // Utilisation de la variable globale 'data' uniquement
 String string_prefix;
 String valueString;
-int values[2] = {0, 0}; 
+int values[2] = {0, 0};
 int prefix;
 
 //Définition des variables pour le bluetooth
-const int RX = 0;
-const int TX = 1;
-SoftwareSerial bluetoothSerial(RX, TX); // RX, TX
+//const int RX = 0;
+//const int TX = 1;
+//SoftwareSerial Serial(RX, TX); // RX, TX
 
 //Définition des variables pour le système d'éclairage
 const int PIN_ENABLE_LEDS = A3; //PIN pour la commande de l'éclairage
@@ -43,19 +43,19 @@ const int Y_joy1 = 500;
 const int Y_joy2 = 564;
 
 //Boundaries for the treshold function
-const int upperBound_joy1 = Y_joy1 + ceil(1023*0.01);
-const int lowerBound_joy1 = Y_joy1 - ceil(1023*0.01);
+const int upperBound_joy1 = Y_joy1 + ceil(1023 * 0.01);
+const int lowerBound_joy1 = Y_joy1 - ceil(1023 * 0.01);
 
-const int upperBound_joy2 = Y_joy2 + ceil(1023*0.01);
-const int lowerBound_joy2 = Y_joy2 - ceil(1023*0.01);
+const int upperBound_joy2 = Y_joy2 + ceil(1023 * 0.01);
+const int lowerBound_joy2 = Y_joy2 - ceil(1023 * 0.01);
 
 
 
 //GYROSCOPE : Définition variable pour la lecture angle y
-const int MPU_addr=0x68;
-int16_t AcX,AcY,AcZ,Tmp,GyX,GyY,GyZ;
-int minVal=265;
-int maxVal=402;
+const int MPU_addr = 0x68;
+int16_t AcX, AcY, AcZ, Tmp, GyX, GyY, GyZ;
+int minVal = 265;
+int maxVal = 402;
 double x;
 double y;
 double z;
@@ -66,7 +66,7 @@ const unsigned long periodGyro = 10;
 bool asservissement_state = false;
 Servo servo; // création de l'objet "servo"
 const int servoPin = 6; //définition du pin du servo
-double angleConsigne = 90;  
+double angleConsigne = 90;
 double previousAngle = 90; //notre zero est 90 sur le gyro
 double prevError = 0.0;
 double I = 0;
@@ -74,22 +74,20 @@ const double Kp = 0.03;
 const double Ki = 0.1;
 const double Kd = 0.1;
 double DeadZoneAsserv = 5;
-const unsigned long periodServo = 10;
+const unsigned long periodServo = 100;
 
 //CAMERA: Mode manuel définition des variables
-const unsigned long periodCamera = 300; 
+const unsigned long periodCamera = 300;
 
 
 void setup() {
   //Serial.begin(9600);
-  
+
   //Définition des pins
   pinMode (PIN_ENABLE_LEDS, OUTPUT); //définition du PIN ENABLE LED comme une sortie
   analogWrite(PIN_ENABLE_LEDS, 0); //on éteint l'éclairage par défaut
 
-  pinMode(RX, INPUT);
-  pinMode(TX, OUTPUT);
-  bluetoothSerial.begin(9600);
+  Serial.begin(9600);
 
   pinMode(PIN_M1, OUTPUT);
   pinMode(PIN_M2, OUTPUT);
@@ -99,161 +97,172 @@ void setup() {
   pinMode(PIN_JOY1, INPUT);
   pinMode(PIN_JOY2, INPUT);
 
-  miseZero();
-
   //GYROSCOPE : Setup
   Wire.begin();
   Wire.beginTransmission(MPU_addr);
   Wire.write(0x6B);
   Wire.write(0);
   Wire.endTransmission(true);
-  
+
+  miseZero();
   //ASSERVISSEMENT : Setup
   servo.attach(servoPin); // attache le servo au pin spécifié
   servo.write(90); //définir la position initiale du servo
 }
 
+
+
+
 void loop() {
-  
+
+
   // Lecture et traitement de la data reçue par Bluetooth
-  if (bluetoothSerial.available()) {
-    
+  if (Serial.available()) {
+
     // Lecture des données jusqu'au caractère '!'
-    data = bluetoothSerial.readStringUntil('!');
-    data.trim();  // Nettoie la chaîne reçue
+    char c = Serial.read();
+    if (c != '!') {
+      data += c;
 
-    // Affiche la chaîne reçue pour débogage
-    Serial.println("Donnée reçue : " + data);
-    
-    // Affiche chaque caractère pour analyser les problèmes
-    for (int i = 0; i < data.length(); i++) {
-      char c = data[i];
-      Serial.print("Caractère : ");
-      Serial.println(c);
-      Serial.print("Code ASCII : ");
-      Serial.println((int)c);
+    } else {
+
+
+      data.trim();  // Nettoie la chaîne reçue
+
+      // Affiche la chaîne reçue pour débogage
+      //Serial.println("Donnée reçue : " + data);
+
+      // Affiche chaque caractère pour analyser les problèmes
+      for (int i = 0; i < data.length(); i++) {
+        char c = data[i];
+        //Serial.print("Caractère : ");
+        //Serial.println(c);
+        //Serial.print("Code ASCII : ");
+        //Serial.println((int)c);
+      }
+
+      //bluetooth//Serial.println("data reçue : ");
+      //bluetooth//Serial.println(data);
+
+      // Vérifier que la chaîne contient au moins un préfixe et une valeur
+      if (data.length() >= 3) {
+        // Diviser la chaîne reçue en fonction du séparateur '.'
+        int firstDotIndex = data.indexOf('.'); // Position du premier point
+        int secondDotIndex = data.indexOf('.', firstDotIndex + 1); // Position du second point, s'il existe
+
+        // Extraire le préfixe (avant le premier point)
+        if (firstDotIndex != -1) {
+          string_prefix = data.substring(0, firstDotIndex);
+          string_prefix.trim(); // Supprime les espaces en début et fin de chaîne
+          prefix = string_prefix.toInt();
+        }
+
+        // Si string_prefix est bien un entier
+        if (isInteger(string_prefix)) {
+          prefix = string_prefix.toInt();
+        } else {
+          //bluetooth//Serial.println("Erreur : le préfixe n'est pas un entier !");
+          prefix = -1;  // Valeur par défaut ou autre action
+        }
+
+        // Extraire la première valeur (entre le premier et le second point, ou après le premier point s'il n'y a qu'une valeur)
+        if (firstDotIndex != -1 && secondDotIndex == -1) {
+          values[0] = data.substring(firstDotIndex + 1).toInt();
+          values[1] = 0; // Pas de deuxième valeur
+        } else if (firstDotIndex != -1 && secondDotIndex != -1) {
+          values[0] = data.substring(firstDotIndex + 1, secondDotIndex).toInt();
+          values[1] = data.substring(secondDotIndex + 1).toInt();
+        }
+
+        // Afficher les résultats pour débogage
+        //bluetooth//Serial.print("Préfixe reçu : ");
+        //bluetooth//Serial.println(prefix);
+        //bluetooth//Serial.print("Valeur 1 : ");
+        //bluetooth//Serial.println(values[0]);
+        //bluetooth//Serial.print("Valeur 2 : ");
+        //bluetooth//Serial.println(values[1]);
+
+        // Appel de la fonction de traitement des valeurs selon le préfixe
+        choixCible(prefix, values);
+
+        // Vérifiez et réinitialisez après traitement
+        if (data.length() > 0) {
+          data = "";  // Nettoie après chaque traitement
+          //Serial.flush();  // Vide le buffer avant de lire de nouvelles données
+        }
+      }
+
     }
 
-    bluetoothSerial.println("data reçue : ");
-    bluetoothSerial.println(data);
-
-    // Vérifier que la chaîne contient au moins un préfixe et une valeur
-    if (data.length() >= 3) {
-      // Diviser la chaîne reçue en fonction du séparateur '.'
-      int firstDotIndex = data.indexOf('.'); // Position du premier point
-      int secondDotIndex = data.indexOf('.', firstDotIndex + 1); // Position du second point, s'il existe
-
-      // Extraire le préfixe (avant le premier point)
-      if (firstDotIndex != -1) {
-        string_prefix = data.substring(0, firstDotIndex);
-        string_prefix.trim(); // Supprime les espaces en début et fin de chaîne
-        prefix = string_prefix.toInt();
-      }
-      
-      // Si string_prefix est bien un entier
-      if (isInteger(string_prefix)) {
-        prefix = string_prefix.toInt();
-      } else {
-        bluetoothSerial.println("Erreur : le préfixe n'est pas un entier !");
-        prefix = -1;  // Valeur par défaut ou autre action
-      }
-
-      // Extraire la première valeur (entre le premier et le second point, ou après le premier point s'il n'y a qu'une valeur)
-      if (firstDotIndex != -1 && secondDotIndex == -1) {
-        values[0] = data.substring(firstDotIndex + 1).toInt();
-        values[1] = 0; // Pas de deuxième valeur
-      } else if (firstDotIndex != -1 && secondDotIndex != -1) {
-        values[0] = data.substring(firstDotIndex + 1, secondDotIndex).toInt();
-        values[1] = data.substring(secondDotIndex + 1).toInt();
-      }
-
-      // Afficher les résultats pour débogage
-      bluetoothSerial.print("Préfixe reçu : ");
-      bluetoothSerial.println(prefix);
-      bluetoothSerial.print("Valeur 1 : ");
-      bluetoothSerial.println(values[0]);
-      bluetoothSerial.print("Valeur 2 : ");
-      bluetoothSerial.println(values[1]);
-
-      // Appel de la fonction de traitement des valeurs selon le préfixe
-      choixCible(prefix, values);
-
-      // Vérifiez et réinitialisez après traitement
-      if (data.length() > 0) {
-        data = "";  // Nettoie après chaque traitement
-        bluetoothSerial.flush();  // Vide le buffer avant de lire de nouvelles données
-      }
-    }
-    delay(100);
   }
 
-  //DEFENSE MODE 
+  //DEFENSE MODE
   //Si le defense mode est actif, on fait clignoter les LEDs à une certaine fréquence
-  if(defense_state){
-    Serial.print("Defense actif");
+  if (defense_state) {
+    //Serial.print("Defense actif");
     eclairageDefense();
   }
 
-  //Mode camera automatique 
+  //Mode camera automatique
   //Si le defense mode est actif, on fait clignoter les LEDs à une certaine fréquence
-  if(asservissement_state){
+  if (asservissement_state) {
     lire_angle();
     asservissement_servo(angleMesure);
   }
 }
 
- 
+
 
 //-----------------------------------------------------------------------------------------------------------------
 //                                    Fonction : CHOIX MODE ECLAIRAGE
 //-----------------------------------------------------------------------------------------------------------------
-void choixCible(int prefix, int value[]){
+void choixCible(int prefix, int value[]) {
 
-  if (prefix == 11) { 
+  if (prefix == 11) {
 
- 
 
-    // Rotation des moteurs 
+
+    // Rotation des moteurs
     int value_M1 = value[0]; //* thresholdFunction(value[0], lowerBound_joy1, upperBound_joy1);
     int value_M2 = value[1]; //* thresholdFunction(value[1], lowerBound_joy2, upperBound_joy2);
 
-  
+
     // Mapping des valeurs d'entrée des joysticks pour les moteurs
     commandMotors(map(value_M1, 0, 1023, 0, 255), map(value_M2, 0, 1023, 0, 255));
 
 
   } else if (prefix == 31) {
-    Serial.println("Lampe switch");
+    //Serial.println("Lampe switch");
     // Changement d'état de la lampe (soit ON soit OFF)
     defense_state = false;
     lampeOnOff(value[0]);
   } else if (prefix == 32) {
-    Serial.println("Defense");
+    //Serial.println("Defense");
     // Choix d'activer le mode défense
     defense_state = true;
-    } else if (prefix == 22) {
-    Serial.println("Asservissement");
+  } else if (prefix == 22) {
+    //Serial.println("Asservissement");
     asservissement_state = false;
     camera_manual(value[0]);
   } else {
-    Serial.println("MaZ");
+    //Serial.println("MaZ");
     miseZero();
   }
 
 
-  }
+}
 //-----------------------------------------------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------------------------------------------
 //                                    Fonction : MISE A ZERO
 //-----------------------------------------------------------------------------------------------------------------
-  void miseZero(){
-    defense_state = false; //Mode defense non actif
-    asservissement_state = true; 
-    lampeOnOff(0); //On éteint la lampe
-    setupMotors();
+void miseZero() {
+  defense_state = false; //Mode defense non actif
+  asservissement_state = true;
+  lampeOnOff(0); //On éteint la lampe
+  setupMotors();
 
-  }
+}
 //-----------------------------------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------------------------------------------
 
@@ -261,17 +270,17 @@ void choixCible(int prefix, int value[]){
 //-----------------------------------------------------------------------------------------------------------------
 //                                    Fonction : Système d'éclairage -- MODE ETEINT -- 0000
 //-----------------------------------------------------------------------------------------------------------------
-  void lampeOnOff(int value){
-    Serial.println("Valeur led");
-    Serial.println(value);
-    analogWrite(PIN_ENABLE_LEDS,value); //On change l'état des LEDs en fonction de la valeur
-    if(value ==1024 ){
-      ledState = 1;
-    }else{
-      ledState = 0;
-    }
-    Serial.println("LEDs changent etat");
+void lampeOnOff(int value) {
+  //Serial.println("Valeur led");
+  //Serial.println(value);
+  analogWrite(PIN_ENABLE_LEDS, value); //On change l'état des LEDs en fonction de la valeur
+  if (value == 1024 ) {
+    ledState = 1;
+  } else {
+    ledState = 0;
   }
+  //Serial.println("LEDs changent etat");
+}
 //-----------------------------------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------------------------------------------
 
@@ -286,15 +295,15 @@ void eclairageDefense() {
   // Vérifie si le temps pour changer l'état de la LED est écoulé
   if (currentMillis - previousMillis >= frequence_clignotement) {
     previousMillis = currentMillis;        // Met à jour le temps précédent
-    ledState = 1-ledState;                  // Inverse l'état de la LED
+    ledState = 1 - ledState;                // Inverse l'état de la LED
 
     // Met à jour la luminosité de la LED en fonction de son nouvel état
     if (ledState == 1) {
       analogWrite(PIN_ENABLE_LEDS, 1023);  // Allume la LED
-      Serial.println("LED allumée");
+      //Serial.println("LED allumée");
     } else {
       analogWrite(PIN_ENABLE_LEDS, 0);     // Éteint la LED
-      Serial.println("LED éteinte");
+      //Serial.println("LED éteinte");
     }
   }
 }
@@ -316,7 +325,7 @@ void setupMotors() {
 //-----------------------------------------------------------------------------------------------------------------
 //                                    Fonction : Threshold function
 //-----------------------------------------------------------------------------------------------------------------
-  int thresholdFunction(int x, int lowerBound, int upperBound) {
+int thresholdFunction(int x, int lowerBound, int upperBound) {
   if (x < lowerBound) {
     return 0;  // If x is greater than the lowerBound return 0
   } else if (x > upperBound) {
@@ -330,12 +339,12 @@ void setupMotors() {
 //-----------------------------------------------------------------------------------------------------------------
 //                                    Fonction : rotation direction
 //-----------------------------------------------------------------------------------------------------------------
-  void rotationDirection(int y, int Y_joy, int PIN_SENS){
-  if (y < Y_joy ){
-    bluetoothSerial.println("On recule");
+void rotationDirection(int y, int Y_joy, int PIN_SENS) {
+  if (y < Y_joy ) {
+    //bluetooth//Serial.println("On recule");
     digitalWrite(PIN_SENS, LOW); //Counter clockwise rotation direction
-  }else{
-    bluetoothSerial.println("On avance");
+  } else {
+    //bluetooth//Serial.println("On avance");
     digitalWrite(PIN_SENS, HIGH); //Clockwise rotation direction
   }
 }
@@ -344,20 +353,20 @@ void setupMotors() {
 //-----------------------------------------------------------------------------------------------------------------
 //                                    Fonction : commande moteur
 //-----------------------------------------------------------------------------------------------------------------
-  void commandMotors(int value_mapped_M1, int value_mapped_M2) {
+void commandMotors(int value_mapped_M1, int value_mapped_M2) {
   // Vitesse de rotation des moteurs nulle
-  
-  bluetoothSerial.println("Valeur mot1 mapped");
-  bluetoothSerial.println(value_mapped_M1);
+  /*
+    bluetooth//Serial.println("Valeur mot1 mapped");
+    bluetooth//Serial.println(value_mapped_M1);
 
-  bluetoothSerial.println("Valeur mot2 mapped");
-  bluetoothSerial.println(value_mapped_M2);
+    bluetooth//Serial.println("Valeur mot2 mapped");
+    bluetooth//Serial.println(value_mapped_M2);
 
-  bluetoothSerial.println("PINM1 ");
-  bluetoothSerial.println(PIN_M1);
+    bluetooth//Serial.println("PINM1 ");
+    bluetooth//Serial.println(PIN_M1);
 
-  bluetoothSerial.println("PINM2 ");
-  bluetoothSerial.println(PIN_M2);
+    bluetooth//Serial.println("PINM2 ");
+    bluetooth//Serial.println(PIN_M2);*/
 
 
   analogWrite(PIN_M1, value_mapped_M1);
@@ -370,14 +379,14 @@ void setupMotors() {
 //-----------------------------------------------------------------------------------------------------------------
 
 bool isInteger(const String &str) {
-    if (str.length() == 0) return false; // Vérifie que la chaîne n'est pas vide
+  if (str.length() == 0) return false; // Vérifie que la chaîne n'est pas vide
 
-    for (size_t i = 0; i < str.length(); i++) {
-        if (!isDigit(str[i])) {  // Vérifie si chaque caractère est un chiffre
-            return false;
-        }
+  for (size_t i = 0; i < str.length(); i++) {
+    if (!isDigit(str[i])) {  // Vérifie si chaque caractère est un chiffre
+      return false;
     }
-    return true;
+  }
+  return true;
 }
 
 
@@ -385,55 +394,54 @@ bool isInteger(const String &str) {
 //                                    Fonction : Mode manuel camera
 //-----------------------------------------------------------------------------------------------------------------
 void camera_manual(int value) {
-  unsigned long currentMillisCamera = millis(); 
+  unsigned long currentMillisCamera = millis();
   static unsigned long previousMillisCamera = 0;
   double angleCameraConsigne = value;
-  double previousAngle = 90; 
-  angleCameraConsigne = map(angleCameraConsigne, 0, 1024, 0, 180); 
-  Serial.println(angleCameraConsigne);  
-  if(currentMillisCamera - previousMillisCamera >= periodCamera) {
-    previousMillisCamera = currentMillisCamera; 
-    servo.write(180-angleCameraConsigne);
+  angleCameraConsigne = map(angleCameraConsigne, 0, 1024, 0, 180);
+  //Serial.println(angleCameraConsigne);
+  if (currentMillisCamera - previousMillisCamera >= periodCamera) {
+    previousMillisCamera = currentMillisCamera;
+    servo.write(180 - angleCameraConsigne);
   }
 }
 
 //-----------------------------------------------------------------------------------------------------------------
 //                                    Fonction : Asservissement servomoteur
 //-----------------------------------------------------------------------------------------------------------------
-void asservissement_servo(double angleY){
-  unsigned long currentMillisAsserv = millis(); 
+void asservissement_servo(double angleY) {
+  unsigned long currentMillisAsserv = millis();
   static unsigned long previousMillisAsserv = 0;
-  if(currentMillisAsserv - previousMillisAsserv >= periodServo) {
-    previousMillisAsserv = currentMillisAsserv; 
-    Serial.print("AngleY=");
-    Serial.println(angleY);
-    Serial.print("Angleconsigne=");
-    Serial.println(angleConsigne);
+  if (currentMillisAsserv - previousMillisAsserv >= periodServo) {
+    previousMillisAsserv = currentMillisAsserv;
+    //Serial.print("AngleY=");
+    //Serial.println(angleY);
+    //Serial.print("Angleconsigne=");
+    //Serial.println(angleConsigne);
     double error = angleConsigne - angleY;
-    Serial.print("Error = ");
-    Serial.println(error);
-    if(abs(error) > DeadZoneAsserv) { 
+    //Serial.print("Error = ");
+    //Serial.println(error);
+    if (abs(error) > DeadZoneAsserv) {
       // Calcul des termes PID
       double P = Kp * error;
       I += Ki * error;
-      double D = Kd * (error - prevError)/periodServo;
+      double D = Kd * (error - prevError) / periodServo;
       I = constrain(I, -90, 90); //il ne faut pas que I augmente trop -> "windup"
       // Calcul de la commande du servomoteur
-      Serial.print("I = ");
-      Serial.println(I);
+      //Serial.print("I = ");
+      //Serial.println(I);
       double servoCommand = P + I + D;
-      Serial.print("servoCommand = ");
-      Serial.println(servoCommand);
+      //Serial.print("servoCommand = ");
+      //Serial.println(servoCommand);
       servoCommand = map(servoCommand, -90, 90, 0, 180);
       double servoCommandConsigne = servoCommand;
       servoCommandConsigne = constrain(servoCommand, 0, 180);
-      Serial.print("servoCommandConsigne = ");
-      Serial.println(servoCommandConsigne);
-      servo.write(180-servoCommandConsigne);
-    
+      //Serial.print("servoCommandConsigne = ");
+      //Serial.println(servoCommandConsigne);
+      servo.write(180 - servoCommandConsigne);
+
       // Mise à jour de l'erreur précédente
       prevError = error;
-     }
+    }
   }
 }
 //-----------------------------------------------------------------------------------------------------------------
@@ -442,43 +450,43 @@ void asservissement_servo(double angleY){
 //-----------------------------------------------------------------------------------------------------------------
 void lire_angle() {
   static unsigned long previousMillisGyro = 0;
-  unsigned long currentMillisGyro = millis(); 
-  if(currentMillisGyro - previousMillisGyro >= periodGyro) {
-    previousMillisGyro = currentMillisGyro; 
-    if(abs(angleConsigne - lire_angle_gyro()) > DeadZoneGyro) {  
+  unsigned long currentMillisGyro = millis();
+  if (currentMillisGyro - previousMillisGyro >= periodGyro) {
+    previousMillisGyro = currentMillisGyro;
+    if (abs(angleConsigne - lire_angle_gyro()) > DeadZoneGyro) {
       angleMesure = lire_angle_gyro();
       previousAngle = angleMesure;
     }
   }
   else {
     angleMesure = previousAngle;
-  }  
+  }
 }
 
-double lire_angle_gyro() { 
-    //lecture des angles
-    Wire.beginTransmission(MPU_addr);
-    Wire.write(0x3B);
-    Wire.endTransmission(false);
-    Wire.requestFrom(MPU_addr,14,true);
-  
-    //lecture des angles
-    AcX=Wire.read()<<8|Wire.read();
-    AcY=Wire.read()<<8|Wire.read();
-    AcZ=Wire.read()<<8|Wire.read();
-    int xAng = map(AcX,minVal,maxVal,-90,90);
-    int yAng = map(AcY,minVal,maxVal,-90,90);
-    int zAng = map(AcZ,minVal,maxVal,-90,90);
-  
-    //conversion des angles en degrés
-    x= RAD_TO_DEG * (atan2(-yAng, -zAng)+PI);
-    y= RAD_TO_DEG * (atan2(-xAng, -zAng)+PI);
-    z= RAD_TO_DEG * (atan2(-yAng, -xAng)+PI);
-     
-    //renvoi de la valeur de l'angle y
-    //Serial.println("AngleY= ");
-    //Serial.println("-----------------------------------------");
-    return y+10;
+double lire_angle_gyro() {
+  //lecture des angles
+  Wire.beginTransmission(MPU_addr);
+  Wire.write(0x3B);
+  Wire.endTransmission(false);
+  Wire.requestFrom(MPU_addr, 14, true);
+
+  //lecture des angles
+  AcX = Wire.read() << 8 | Wire.read();
+  AcY = Wire.read() << 8 | Wire.read();
+  AcZ = Wire.read() << 8 | Wire.read();
+  int xAng = map(AcX, minVal, maxVal, -90, 90);
+  int yAng = map(AcY, minVal, maxVal, -90, 90);
+  int zAng = map(AcZ, minVal, maxVal, -90, 90);
+
+  //conversion des angles en degrés
+  x = RAD_TO_DEG * (atan2(-yAng, -zAng) + PI);
+  y = RAD_TO_DEG * (atan2(-xAng, -zAng) + PI);
+  z = RAD_TO_DEG * (atan2(-yAng, -xAng) + PI);
+
+  //renvoi de la valeur de l'angle y
+  ////Serial.println("AngleY= ");
+  ////Serial.println("-----------------------------------------");
+  return y + 10;
 }
 //-----------------------------------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------------------------------------------

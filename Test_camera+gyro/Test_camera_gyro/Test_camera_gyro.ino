@@ -19,7 +19,7 @@ double DeadZoneGyro = 3; //on laisse une marge de 3 degré pour que le servo bou
 const unsigned long periodGyro = 10;
 //ASSERVISSEMENT : Définition des variables
 Servo servo; // création de l'objet "servo"
-const int servoPin = 5; //définition du pin du servo
+const int servoPin = 6; //définition du pin du servo
 double angleConsigne = 90;  
 double previousAngle = 90; //notre zero est 90 sur le gyro
 double prevError = 0.0;

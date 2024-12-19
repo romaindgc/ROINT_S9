@@ -4,8 +4,9 @@
 #include "Servo.h"
 #include <I2Cdev.h>
 
+
 Servo servo; // création de l'objet "servo"
-const int servoPin = 5; //définition du pin du servo
+const int servoPin = 6; //définition du pin du servo
 
 
 //Définition variable pour la lecture angle y
@@ -25,10 +26,10 @@ double DeadZoneGyro = 3; //on laisse une marge de 3 degré pour que le servo bou
 //Variable asserv
 double prevError = 0.0;
 double I = 0;
-const double Kp = 0.05;
+const double Kp = 0.03;
 const double Ki = 0.10;
 const double Kd = 0.1;
-double DeadZoneAsserv = 5;
+double DeadZoneAsserv = 6;
 //Définition des variables pour le bluetooth
 //const int RX = 1;
 //const int TX = 0;
@@ -52,6 +53,9 @@ void setup() {
   servo.write(90); //définir la position initiale du servo
 
   Serial.begin(9600);
+  //pinMode(RX, INPUT);
+  //pinMode(TX, OUTPUT);
+  //bluetoothSerial.begin(9600);
 
   // define pin modes for tx, rx pins:
   //pinMode(RX, INPUT);
