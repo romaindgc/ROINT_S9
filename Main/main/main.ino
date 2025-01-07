@@ -397,8 +397,8 @@ void commandMotors(int value_mapped_M1, int value_mapped_M2) {
   analogWrite(PIN_M2, value_mapped_M2);
 
   // Sens de rotation par défaut : vers l'avant
-  rotationDirection(value_mapped_M1, Y_joy1, PIN_M1);
-  rotationDirection(value_mapped_M2, Y_joy2, PIN_M2);
+  rotationDirection(value_mapped_M1, Y_joy1, PIN_SENS_M1);
+  rotationDirection(value_mapped_M2, Y_joy2, PIN_SENS_M2);
 }
 //-----------------------------------------------------------------------------------------------------------------
 
