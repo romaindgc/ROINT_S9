@@ -39,8 +39,8 @@ const int PIN_JOY1 = A3;
 const int PIN_JOY2 = A4;
 
 //Initial value of Y for each joysticks
-const int Y_joy1 = 500;
-const int Y_joy2 = 564;
+const int Y_joy1 = 532;
+const int Y_joy2 = 506;
 
 //Boundaries for the treshold function
 const int upperBound_joy1 = Y_joy1 + ceil(1023 * 0.01);
@@ -221,14 +221,37 @@ void choixCible(int prefix, int value[]) {
   if (prefix == 11) {
 
 
-
     // Rotation des moteurs
-    int value_M1 = value[0]; //* thresholdFunction(value[0], lowerBound_joy1, upperBound_joy1);
-    int value_M2 = value[1]; //* thresholdFunction(value[1], lowerBound_joy2, upperBound_joy2);
+    int value_M1 = value[1]; //* thresholdFunction(value[0], lowerBound_joy1, upperBound_joy1);
+    int value_M2 = value[0]; //* thresholdFunction(value[1], lowerBound_joy2, upperBound_joy2);
 
-
+    int mapped_m1 = map(value_M1, 0, 1023, -80, 80);
+    int mapped_m2 = map(value_M2, 0, 1023, -80, 80);
+    
+    if (mapped_m1 < 0 ) {
+      //bluetooth//Serial.println("On recule");
+      digitalWrite(PIN_SENS_M1, LOW); //Counter clockwise rotation direction
+      mapped_m1 = -mapped_m1;
+    } else {
+      //bluetooth//Serial.println("On avance");
+      digitalWrite(PIN_SENS_M1, HIGH); //Clockwise rotation direction
+    }
+    
+    if (mapped_m2 < 0 ) {
+      //bluetooth//Serial.println("On recule");
+      digitalWrite(PIN_SENS_M2, LOW); //Counter clockwise rotation direction
+      mapped_m2 = -mapped_m2;
+    } else {
+      //bluetooth//Serial.println("On avance");
+      digitalWrite(PIN_SENS_M2, HIGH); //Clockwise rotation direction
+    }
+    
+    analogWrite(PIN_M1, mapped_m1);
+    analogWrite(PIN_M2, mapped_m2);
     // Mapping des valeurs d'entrée des joysticks pour les moteurs
-    commandMotors(map(value_M1, 0, 1023, 0, 255), map(value_M2, 0, 1023, 0, 255));
+    //commandMotors(map(value_M1, 0, 1023, 0, 255), map(value_M1, 0, 1023, 0, 255));
+    //    commandMotors(map(value_M1, 0, 1023, 0, 255), map(value_M2, 0, 1023, 0, 255));
+
 
 
   } else if (prefix == 31) {
@@ -240,8 +263,10 @@ void choixCible(int prefix, int value[]) {
     //Serial.println("Defense");
     // Choix d'activer le mode défense
     defense_state = true;
-  } else if (prefix == 22) {
+  } else if (prefix == 22) {//22
     //Serial.println("Asservissement");
+    analogWrite(PIN_M1,0);
+    analogWrite(PIN_M2, 0);
     asservissement_state = false;
     camera_manual(value[0]);
   } else {
@@ -273,11 +298,11 @@ void miseZero() {
 void lampeOnOff(int value) {
   //Serial.println("Valeur led");
   //Serial.println(value);
-  analogWrite(PIN_ENABLE_LEDS, value); //On change l'état des LEDs en fonction de la valeur
-  if (value == 1024 ) {
-    ledState = 1;
-  } else {
+  analogWrite(PIN_ENABLE_LEDS, 1023*value); //On change l'état des LEDs en fonction de la valeur
+  if (value == 0 ) {
     ledState = 0;
+  } else {
+    ledState = 1;
   }
   //Serial.println("LEDs changent etat");
 }
@@ -367,7 +392,6 @@ void commandMotors(int value_mapped_M1, int value_mapped_M2) {
 
     bluetooth//Serial.println("PINM2 ");
     bluetooth//Serial.println(PIN_M2);*/
-
 
   analogWrite(PIN_M1, value_mapped_M1);
   analogWrite(PIN_M2, value_mapped_M2);
